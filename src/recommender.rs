@@ -462,9 +462,9 @@ impl VisualNovelRecommender {
 
         // Calculate similarities only for a subset of VNs (e.g., 10000 most popular)
         let top_vns: Vec<usize> = self
-            .ratings
+            .tags
             .iter()
-            .map(|r| r.vn_id as usize)
+            .map(|t| t.vn_id as usize)
             .filter(|&id| id != row_idx && id < data_matrix.rows())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
