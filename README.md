@@ -9,12 +9,6 @@ A Rust implementation ("riir") of the [Visual Novel Recommendation Engine](https
 - Combined recommendation system that leverages both approaches
 - Significantly reduced memory footprint compared to the original implementation
 
-## Known Issues
-
-- There are currently some discrepancies between recommendations in this version compared to the original. This is under investigation.
-
-for example: result from `cargo run -r -- --vn-id 562` and <https://vnlike.org/>.
-
 ## Implementation Notes
 
 - This port was primarily completed with the assistance of claude 3.7 sonnet
