@@ -1,6 +1,7 @@
 use std::sync::Arc;
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct VnTitle {
     pub vn_id: i32,
     pub language: Arc<str>,
@@ -9,7 +10,7 @@ pub struct VnTitle {
     pub latin_title: Option<Arc<str>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Rating {
     pub vn_id: i32,
     pub user_id: i32,
@@ -17,7 +18,7 @@ pub struct Rating {
     pub date: Arc<str>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Tag {
     pub tag_id: i32,
     pub vn_id: i32,
