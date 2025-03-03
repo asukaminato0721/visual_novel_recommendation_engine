@@ -405,7 +405,7 @@ impl VisualNovelRecommender {
         }
 
         // Calculate average and scores
-        let mut scores: HashMap<i32, f64> = similar_vns
+        let scores: HashMap<i32, f64> = similar_vns
             .iter()
             .map(|(vn_id, (total_rating, count))| {
                 let avg_rating = total_rating / *count as f64;
@@ -413,16 +413,23 @@ impl VisualNovelRecommender {
             })
             .collect();
 
-        // Normalize scores
-        self.min_max_normalize(&mut scores);
-
         // Get top N VNs by score
         let mut score_vec: Vec<(i32, f64)> = scores.into_iter().collect();
         score_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
         score_vec.truncate(self.num_vns);
 
-        score_vec.into_iter().collect()
+        // Convert to HashMap with VN IDs as keys
+        let mut scores: HashMap<i32, f64> = score_vec
+            .clone()
+            .into_iter()
+            .map(|(idx, score)| (idx as i32, score))
+            .collect();
+
+        // Apply min-max normalization
+        self.min_max_normalize(&mut scores);
+
+        scores
     }
 
     pub fn get_tag_recommendations_score(&self, vn_id: i32) -> HashMap<i32, f64> {
@@ -455,9 +462,9 @@ impl VisualNovelRecommender {
 
         // Calculate similarities only for a subset of VNs (e.g., 10000 most popular)
         let top_vns: Vec<usize> = self
-            .ratings
+            .tags
             .iter()
-            .map(|r| r.vn_id as usize)
+            .map(|t| t.vn_id as usize)
             .filter(|&id| id != row_idx && id < data_matrix.rows())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -546,19 +553,25 @@ impl VisualNovelRecommender {
 
     pub fn get_user_recommendations(&self, vn_id: i32) -> Vec<i32> {
         let scores = self.get_user_recommendations_scores(vn_id);
-        let ids: Vec<i32> = scores.into_iter().map(|(id, _)| id).collect();
+        let mut score_vec: Vec<(i32, f64)> = scores.into_iter().collect();
+        score_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        let ids: Vec<i32> = score_vec.into_iter().map(|(id, _)| id).collect();
         self.resize_list(ids)
     }
 
     pub fn get_tag_recommendations(&self, vn_id: i32) -> Vec<i32> {
         let scores = self.get_tag_recommendations_score(vn_id);
-        let ids: Vec<i32> = scores.into_iter().map(|(id, _)| id).collect();
+        let mut score_vec: Vec<(i32, f64)> = scores.into_iter().collect();
+        score_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        let ids: Vec<i32> = score_vec.into_iter().map(|(id, _)| id).collect();
         self.resize_list(ids)
     }
 
     pub fn get_combined_recommendations(&self, vn_id: i32) -> Vec<i32> {
         let scores = self.get_combined_recommendations_score(vn_id);
-        let ids: Vec<i32> = scores.into_iter().map(|(id, _)| id).collect();
+        let mut score_vec: Vec<(i32, f64)> = scores.into_iter().collect();
+        score_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        let ids: Vec<i32> = score_vec.into_iter().map(|(id, _)| id).collect();
         self.resize_list(ids)
     }
 }

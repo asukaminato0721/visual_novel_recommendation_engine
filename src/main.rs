@@ -33,7 +33,7 @@ fn main() {
         args.num_recommendations,
         args.tag_weight,
         args.vote_weight,
-        1.5, // tag_exp
+        2.0, // tag_exp
         1.0, // vote_exp
         ignore_tags,
         true,  // verbose
