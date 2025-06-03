@@ -17,8 +17,8 @@ class RecommendationApp {
             this.recommender = new WasmRecommender();
             console.log('WASM module initialized successfully');
             
-            // Start loading data automatically
-            await this.loadAllData();
+            // Setup file upload handlers
+            this.setupFileUploadHandlers();
             
         } catch (error) {
             console.error('Failed to initialize WASM module:', error);
@@ -26,108 +26,100 @@ class RecommendationApp {
         }
     }
 
-    async loadAllData() {
-        this.updateProgress(0, 'Starting data download...');
-        
+    setupFileUploadHandlers() {
+        // VN Titles file upload
+        document.getElementById('vnTitlesFile').addEventListener('change', (event) => {
+            this.handleFileUpload(event, 'vnTitles');
+        });
+
+        // Tags file upload
+        document.getElementById('tagsFile').addEventListener('change', (event) => {
+            this.handleFileUpload(event, 'tags');
+        });
+
+        // Votes file upload
+        document.getElementById('votesFile').addEventListener('change', (event) => {
+            this.handleFileUpload(event, 'votes');
+        });
+    }
+
+    async handleFileUpload(event, dataType) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const statusId = dataType === 'vnTitles' ? 'vnTitlesStatus' : 
+                        dataType === 'tags' ? 'tagsStatus' : 'votesStatus';
+
         try {
-            // Load VN titles
-            await this.loadVnTitles();
-            this.updateProgress(33, 'VN titles loaded...');
+            this.updateDataStatus(statusId, 'loading', 'Reading file...');
+            this.showUploadProgress(true);
+
+            const fileContent = await this.readFileAsText(file);
             
-            // Load tags
-            await this.loadTags();
-            this.updateProgress(66, 'Tags data loaded...');
+            let success = false;
+            switch (dataType) {
+                case 'vnTitles':
+                    success = this.recommender.load_vn_titles(fileContent);
+                    if (success) {
+                        this.dataLoaded.titles = true;
+                        this.updateDataStatus(statusId, 'success', `Loaded (${file.name})`);
+                    }
+                    break;
+                case 'tags':
+                    success = this.recommender.load_tags(fileContent);
+                    if (success) {
+                        this.dataLoaded.tags = true;
+                        this.updateDataStatus(statusId, 'success', `Loaded (${file.name})`);
+                    }
+                    break;
+                case 'votes':
+                    success = this.recommender.load_votes(fileContent);
+                    if (success) {
+                        this.dataLoaded.votes = true;
+                        this.updateDataStatus(statusId, 'success', `Loaded (${file.name})`);
+                    }
+                    break;
+            }
+
+            if (!success) {
+                throw new Error(`Failed to process ${dataType} data`);
+            }
+
+            // Update progress based on loaded data
+            this.updateOverallProgress();
             
-            // Load votes
-            await this.loadVotes();
-            this.updateProgress(100, 'All data loaded successfully!');
-            
-            // Enable recommendations
+            // Check if we can enable recommendations
             this.updateGetRecommendationsButton();
-            
+
         } catch (error) {
-            console.error('Failed to load data:', error);
-            this.showError('Failed to load data files. Please check that the data files are available.');
+            console.error(`Error loading ${dataType}:`, error);
+            this.updateDataStatus(statusId, 'error', 'Failed to load');
+            this.showError(`Failed to load ${dataType} file: ${error.message}`);
+        } finally {
+            this.showUploadProgress(false);
         }
     }
 
-    async loadVnTitles() {
-        try {
-            this.updateDataStatus('vnTitlesStatus', 'loading', 'Downloading...');
-            
-            const response = await fetch('./vn_titles');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.text();
-            const success = this.recommender.load_vn_titles(data);
-            
-            if (success) {
-                this.dataLoaded.titles = true;
-                this.updateDataStatus('vnTitlesStatus', 'success', 'Loaded');
-            } else {
-                throw new Error('Failed to process VN titles data');
-            }
-        } catch (error) {
-            this.updateDataStatus('vnTitlesStatus', 'error', 'Failed');
-            throw error;
-        }
+    readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(new Error('Failed to read file'));
+            reader.readAsText(file);
+        });
     }
 
-    async loadTags() {
-        try {
-            this.updateDataStatus('tagsStatus', 'loading', 'Downloading...');
-            
-            const response = await fetch('./tags_vn');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.text();
-            const success = this.recommender.load_tags(data);
-            
-            if (success) {
-                this.dataLoaded.tags = true;
-                this.updateDataStatus('tagsStatus', 'success', 'Loaded');
-            } else {
-                throw new Error('Failed to process tags data');
-            }
-        } catch (error) {
-            this.updateDataStatus('tagsStatus', 'error', 'Failed');
-            throw error;
-        }
-    }
-
-    async loadVotes() {
-        try {
-            this.updateDataStatus('votesStatus', 'loading', 'Downloading...');
-            
-            // Try to find the votes file (assuming it follows vndb-votes-YYYY-MM-DD pattern)
-            let response;
-            try {
-                response = await fetch('./vndb-votes-2025-06-02');
-            } catch (error) {
-                // If specific file not found, try generic name
-                response = await fetch('./vndb-votes');
-            }
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.text();
-            const success = this.recommender.load_votes(data);
-            
-            if (success) {
-                this.dataLoaded.votes = true;
-                this.updateDataStatus('votesStatus', 'success', 'Loaded');
-            } else {
-                throw new Error('Failed to process votes data');
-            }
-        } catch (error) {
-            this.updateDataStatus('votesStatus', 'error', 'Failed');
-            throw error;
+    updateOverallProgress() {
+        const loadedCount = Object.values(this.dataLoaded).filter(Boolean).length;
+        const totalCount = Object.keys(this.dataLoaded).length;
+        const percentage = (loadedCount / totalCount) * 100;
+        
+        this.updateProgress(percentage, `${loadedCount}/${totalCount} files loaded`);
+        
+        if (loadedCount === totalCount) {
+            setTimeout(() => {
+                this.showUploadProgress(false);
+            }, 1000);
         }
     }
 
@@ -167,6 +159,13 @@ class RecommendationApp {
         
         if (progressText) {
             progressText.textContent = text;
+        }
+    }
+
+    showUploadProgress(show) {
+        const uploadProgress = document.getElementById('uploadProgress');
+        if (uploadProgress) {
+            uploadProgress.classList.toggle('hidden', !show);
         }
     }
 

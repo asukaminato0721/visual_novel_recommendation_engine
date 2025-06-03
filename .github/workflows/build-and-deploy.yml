@@ -9,16 +9,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
-      
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+      uses: actions/checkout@v4
         
     - name: Install wasm-pack
       run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -31,15 +29,22 @@ jobs:
         chmod +x build_web.sh
         ./build_web.sh
         
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Setup Pages
+      if: github.ref == 'refs/heads/master'
+      uses: actions/configure-pages@v3
+      
+    - name: Upload to GitHub Pages
+      if: github.ref == 'refs/heads/master'
+      uses: actions/upload-pages-artifact@v2
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
+        path: ./docs
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/master'
+      uses: actions/deploy-pages@v2
         
     - name: Upload CLI binary as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: vn-recommender-cli
         path: target/release/visual_novel_recommendation_engine

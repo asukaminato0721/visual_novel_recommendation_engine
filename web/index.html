@@ -52,63 +52,102 @@
                 Visual Novel Recommendation Engine
             </h1>
             <p class="text-center text-lg opacity-90">
-                Upload your data and discover amazing visual novels tailored just for you
+                Upload your data files and discover amazing visual novels tailored just for you
             </p>
         </div>
     </header>
 
     <div class="container mx-auto px-4 py-8">
-        <!-- Data Loading Status -->
+        <!-- Data Upload Section -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8 card-hover">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">
-                <i class="fas fa-database mr-2 text-blue-500"></i>
-                Data Loading Status
+                <i class="fas fa-upload mr-2 text-blue-500"></i>
+                Upload Data Files
             </h2>
+            <p class="text-gray-600 mb-6">Please upload the required data files to use the recommendation engine:</p>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-blue-800 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Required Files:
+                </h4>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li><strong>VN Titles:</strong> Contains visual novel IDs and titles (usually named 'vn_titles')</li>
+                    <li><strong>Tags Data:</strong> Contains tag information for visual novels (usually named 'tags_vn')</li>
+                    <li><strong>User Votes:</strong> Contains user ratings and votes (usually named like 'vndb-votes-YYYY-MM-DD')</li>
+                </ul>
+            </div>
             
             <div class="space-y-4">
-                <!-- VN Titles Status -->
+                <!-- VN Titles Upload -->
                 <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div class="flex items-center">
                         <i class="fas fa-heading mr-3 text-blue-500"></i>
-                        <span class="font-medium">VN Titles</span>
+                        <span class="font-medium">VN Titles File</span>
                     </div>
-                    <div id="vnTitlesStatus" class="flex items-center">
-                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
-                        <span class="text-gray-500">Loading...</span>
+                    <div class="flex items-center space-x-4">
+                        <div class="file-upload">
+                            <input type="file" id="vnTitlesFile" />
+                            <label for="vnTitlesFile" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg cursor-pointer transition duration-300">
+                                <i class="fas fa-file-upload mr-2"></i>
+                                Choose File
+                            </label>
+                        </div>
+                        <div id="vnTitlesStatus" class="flex items-center">
+                            <i class="fas fa-clock mr-2 text-gray-400"></i>
+                            <span class="text-gray-500">Waiting for upload</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tags Status -->
+                <!-- Tags Upload -->
                 <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div class="flex items-center">
                         <i class="fas fa-tags mr-3 text-green-500"></i>
-                        <span class="font-medium">Tags Data</span>
+                        <span class="font-medium">Tags Data File</span>
                     </div>
-                    <div id="tagsStatus" class="flex items-center">
-                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
-                        <span class="text-gray-500">Loading...</span>
+                    <div class="flex items-center space-x-4">
+                        <div class="file-upload">
+                            <input type="file" id="tagsFile" />
+                            <label for="tagsFile" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg cursor-pointer transition duration-300">
+                                <i class="fas fa-file-upload mr-2"></i>
+                                Choose File
+                            </label>
+                        </div>
+                        <div id="tagsStatus" class="flex items-center">
+                            <i class="fas fa-clock mr-2 text-gray-400"></i>
+                            <span class="text-gray-500">Waiting for upload</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Votes Status -->
+                <!-- Votes Upload -->
                 <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div class="flex items-center">
                         <i class="fas fa-star mr-3 text-purple-500"></i>
-                        <span class="font-medium">User Votes</span>
+                        <span class="font-medium">User Votes File</span>
                     </div>
-                    <div id="votesStatus" class="flex items-center">
-                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
-                        <span class="text-gray-500">Loading...</span>
+                    <div class="flex items-center space-x-4">
+                        <div class="file-upload">
+                            <input type="file" id="votesFile" />
+                            <label for="votesFile" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg cursor-pointer transition duration-300">
+                                <i class="fas fa-file-upload mr-2"></i>
+                                Choose File
+                            </label>
+                        </div>
+                        <div id="votesStatus" class="flex items-center">
+                            <i class="fas fa-clock mr-2 text-gray-400"></i>
+                            <span class="text-gray-500">Waiting for upload</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div id="loadingProgress" class="mt-4">
+            <div id="uploadProgress" class="mt-4 hidden">
                 <div class="w-full bg-gray-200 rounded-full h-2">
                     <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
                 <p class="text-sm text-gray-600 mt-2">
-                    <span id="progressText">Initializing...</span>
+                    <span id="progressText">Processing files...</span>
                 </p>
             </div>
         </div>

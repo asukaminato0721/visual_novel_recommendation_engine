@@ -5,10 +5,7 @@
 echo "🌐 Starting development server..."
 
 # Check if we have either web or docs directory
-if [ -f "docs/index.html" ]; then
-    echo "📁 Using docs directory (GitHub Pages ready)"
-    cd docs
-elif [ -f "web/index.html" ]; then
+if [ -f "web/index.html" ]; then
     echo "📁 Using web directory"
     cd web
 else
