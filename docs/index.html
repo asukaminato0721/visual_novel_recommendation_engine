@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Visual Novel Recommendation Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .loading {
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .file-upload input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        .recommendation-item {
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        .recommendation-item:hover {
+            background-color: #f8fafc;
+            border-left-color: #764ba2;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-center mb-2">
+                <i class="fas fa-gamepad mr-3"></i>
+                Visual Novel Recommendation Engine
+            </h1>
+            <p class="text-center text-lg opacity-90">
+                Upload your data and discover amazing visual novels tailored just for you
+            </p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Data Loading Status -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 card-hover">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                <i class="fas fa-database mr-2 text-blue-500"></i>
+                Data Loading Status
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- VN Titles Status -->
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-heading mr-3 text-blue-500"></i>
+                        <span class="font-medium">VN Titles</span>
+                    </div>
+                    <div id="vnTitlesStatus" class="flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
+                        <span class="text-gray-500">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Tags Status -->
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-tags mr-3 text-green-500"></i>
+                        <span class="font-medium">Tags Data</span>
+                    </div>
+                    <div id="tagsStatus" class="flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
+                        <span class="text-gray-500">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Votes Status -->
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-star mr-3 text-purple-500"></i>
+                        <span class="font-medium">User Votes</span>
+                    </div>
+                    <div id="votesStatus" class="flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2 text-gray-400"></i>
+                        <span class="text-gray-500">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loadingProgress" class="mt-4">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">
+                    <span id="progressText">Initializing...</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Recommendation Input Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 card-hover">
+
+            <div class="mb-4">
+                <label for="vnId" class="block text-sm font-medium text-gray-700 mb-2">
+                    Visual Novel ID:
+                </label>
+                <input 
+                    type="number" 
+                    id="vnId" 
+                    placeholder="Enter VN ID (e.g., 17)" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+
+            <button 
+                id="getRecommendations" 
+                class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+            >
+                <i class="fas fa-magic mr-2"></i>
+                Get Recommendations
+            </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <p class="mt-4 text-gray-600">Processing your request...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden">
+            <!-- Combined Recommendations -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6 card-hover">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-star mr-2 text-yellow-500"></i>
+                    Combined Recommendations
+                </h3>
+                <div id="combinedRecommendations" class="space-y-3"></div>
+            </div>
+
+            <!-- Tag-based Recommendations -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6 card-hover">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-tags mr-2 text-green-500"></i>
+                    Tag-based Recommendations
+                </h3>
+                <div id="tagRecommendations" class="space-y-3"></div>
+            </div>
+
+            <!-- User-based Recommendations -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6 card-hover">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-users mr-2 text-purple-500"></i>
+                    User-based Recommendations
+                </h3>
+                <div id="userRecommendations" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div class="flex">
+                <div class="py-1">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                </div>
+                <div>
+                    <p class="font-bold">Error</p>
+                    <p class="text-sm" id="errorMessage"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Visual Novel Recommendation Engine. Built with Rust and WASM.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="./index.js"></script>
+</body>
+</html>
