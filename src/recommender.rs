@@ -420,11 +420,7 @@ impl VisualNovelRecommender {
         score_vec.truncate(self.num_vns);
 
         // Convert to HashMap with VN IDs as keys
-        let mut scores: HashMap<i32, f64> = score_vec
-            .clone()
-            .into_iter()
-            .map(|(idx, score)| (idx as i32, score))
-            .collect();
+        let mut scores: HashMap<i32, f64> = score_vec.clone().into_iter().collect();
 
         // Apply min-max normalization
         self.min_max_normalize(&mut scores);
