@@ -61,6 +61,15 @@ impl VisualNovelRecommender {
         recommender
     }
     pub fn load_data(&mut self) -> Result<(), Box<dyn Error>> {
+        // On WASM, we don't load data automatically since file system is not available
+        #[cfg(target_arch = "wasm32")]
+        {
+            if self.verbose {
+                println!("WASM environment detected, skipping automatic data loading");
+            }
+            return Ok(());
+        }
+
         // Load titles
         if self.verbose {
             println!("Loading titles");
@@ -118,7 +127,7 @@ impl VisualNovelRecommender {
                 entry
                     .file_name()
                     .to_str()
-                    .is_some_and(|name| name.starts_with("vndb-votes-"))
+                    .map_or(false, |name| name.starts_with("vndb-votes-"))
             })
             .collect();
 
@@ -598,5 +607,190 @@ impl VisualNovelRecommender {
         score_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         let ids: Vec<i32> = score_vec.into_iter().map(|(id, _)| id).collect();
         self.resize_list(ids)
+    }
+
+    // WASM-specific data loading methods
+    #[cfg(target_arch = "wasm32")]
+    pub fn load_vn_titles_from_string(&mut self, data: &str) -> Result<(), Box<dyn Error>> {
+        let mut vn_titles = Vec::new();
+        
+        for line in data.lines() {
+            let parts: Vec<&str> = line.split('\t').collect();
+            if parts.len() >= 5 {
+                let vn_id_str = parts[0].trim_start_matches('v');
+                let vn_id = match vn_id_str.parse::<i32>() {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                };
+
+                let language = parts[1].to_string();
+                let official = parts[2] == "t";
+                let title = parts[3].to_string();
+                let latin_title = if parts[4] == "\\N" {
+                    None
+                } else {
+                    Some(parts[4].to_string())
+                };
+
+                vn_titles.push(VnTitle {
+                    vn_id,
+                    language: language.into(),
+                    official,
+                    title: title.into(),
+                    latin_title: latin_title.map(|x| x.into()),
+                });
+            }
+        }
+
+        self.vn_titles = vn_titles;
+        Ok(())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn load_ratings_from_string(&mut self, data: &str) -> Result<(), Box<dyn Error>> {
+        let mut ratings = Vec::new();
+
+        for line in data.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 4 {
+                let vn_id = match parts[0].parse::<i32>() {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                };
+
+                let user_id = match parts[1].parse::<i32>() {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                };
+
+                let raw_rating = match parts[2].parse::<f64>() {
+                    Ok(r) => r,
+                    Err(_) => continue,
+                };
+
+                let rating = raw_rating.signum() * raw_rating.abs().powf(self.vote_exp);
+                let date = parts[3].to_string();
+
+                ratings.push(Rating {
+                    vn_id,
+                    user_id,
+                    rating,
+                    date: date.into(),
+                });
+            }
+        }
+
+        self.ratings = ratings;
+        self.calculate_average_ratings();
+        Ok(())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn load_tags_from_string(&mut self, data: &str) -> Result<(), Box<dyn Error>> {
+        let mut reader = ReaderBuilder::new()
+            .delimiter(b'\t')
+            .has_headers(false)
+            .from_reader(data.as_bytes());
+
+        let mut tags = Vec::new();
+
+        for result in reader.records() {
+            let record = result?;
+            if record.len() >= 5 {
+                let tag_id_str = &record[1][1..];
+                let tag_id = match tag_id_str.parse::<i32>() {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                };
+
+                let vn_id_str = &record[2][1..];
+                let vn_id = match vn_id_str.parse::<i32>() {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                };
+
+                let raw_rating = match record[4].parse::<f64>() {
+                    Ok(r) => r,
+                    Err(_) => continue,
+                };
+
+                if self.ignore_tags.contains(&tag_id) {
+                    continue;
+                }
+
+                let rating = raw_rating.signum() * raw_rating.abs().powf(self.tag_exp);
+
+                tags.push(Tag {
+                    tag_id,
+                    vn_id,
+                    rating,
+                });
+            }
+        }
+
+        self.tags = tags;
+        self.build_similarity_matrix()?;
+        Ok(())
+    }
+
+    fn calculate_average_ratings(&mut self) {
+        let mut rating_sums: HashMap<i32, f64> = HashMap::new();
+        let mut rating_counts: HashMap<i32, i32> = HashMap::new();
+
+        for rating in &self.ratings {
+            *rating_sums.entry(rating.vn_id).or_insert(0.0) += rating.rating;
+            *rating_counts.entry(rating.vn_id).or_insert(0) += 1;
+        }
+
+        self.average_ratings = rating_sums
+            .iter()
+            .map(|(vn_id, sum)| {
+                let count = *rating_counts.get(vn_id).unwrap_or(&1) as f64;
+                (*vn_id, sum / count)
+            })
+            .collect();
+    }
+
+    fn build_similarity_matrix(&mut self) -> Result<(), Box<dyn Error>> {
+        let mut tag_sums: HashMap<(i32, i32), f64> = HashMap::new();
+        let mut tag_counts: HashMap<(i32, i32), i32> = HashMap::new();
+
+        for tag in &self.tags {
+            let key = (tag.vn_id, tag.tag_id);
+            *tag_sums.entry(key).or_insert(0.0) += tag.rating;
+            *tag_counts.entry(key).or_insert(0) += 1;
+        }
+
+        let average_tag_votes: Vec<(i32, i32, f64)> = tag_sums
+            .iter()
+            .map(|((vn_id, tag_id), sum)| {
+                let count = *tag_counts.get(&(*vn_id, *tag_id)).unwrap_or(&1) as f64;
+                let avg = sum / count;
+                (*vn_id, *tag_id, avg)
+            })
+            .filter(|(_, _, rating)| *rating != 0.0)
+            .collect();
+
+        let max_vn_id = average_tag_votes
+            .iter()
+            .map(|(vn_id, _, _)| *vn_id)
+            .max()
+            .unwrap_or(0) as usize;
+        let max_tag_id = average_tag_votes
+            .iter()
+            .map(|(_, tag_id, _)| *tag_id)
+            .max()
+            .unwrap_or(0) as usize;
+
+        let mut triplet_matrix = TriMat::new((max_vn_id + 1, max_tag_id + 1));
+
+        for (vn_id, tag_id, rating) in average_tag_votes {
+            triplet_matrix.add_triplet(vn_id as usize, tag_id as usize, rating);
+        }
+
+        let data_sparse = triplet_matrix.to_csr();
+        self.similarity_matrix = Some(data_sparse);
+
+        Ok(())
     }
 }
