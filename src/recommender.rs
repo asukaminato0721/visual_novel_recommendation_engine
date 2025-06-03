@@ -127,7 +127,7 @@ impl VisualNovelRecommender {
                 entry
                     .file_name()
                     .to_str()
-                    .map_or(false, |name| name.starts_with("vndb-votes-"))
+                    .is_some_and(|name| name.starts_with("vndb-votes-"))
             })
             .collect();
 
@@ -613,7 +613,7 @@ impl VisualNovelRecommender {
     #[cfg(target_arch = "wasm32")]
     pub fn load_vn_titles_from_string(&mut self, data: &str) -> Result<(), Box<dyn Error>> {
         let mut vn_titles = Vec::new();
-        
+
         for line in data.lines() {
             let parts: Vec<&str> = line.split('\t').collect();
             if parts.len() >= 5 {
