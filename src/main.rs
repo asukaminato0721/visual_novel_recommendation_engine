@@ -55,9 +55,10 @@ fn main() {
     println!("Tag Recommendations:");
     for (i, vn_id) in tag_recommendations.iter().enumerate() {
         println!(
-            "{}. {} (ID: {})",
+            "{}. {} (ID: {}) - https://vndb.org/v{}",
             i + 1,
             recommender.get_title(*vn_id),
+            vn_id,
             vn_id
         );
     }
@@ -65,9 +66,10 @@ fn main() {
     println!("Vote Recommendations:");
     for (i, vn_id) in user_recommendations.iter().enumerate() {
         println!(
-            "{}. {} (ID: {})",
+            "{}. {} (ID: {}) - https://vndb.org/v{}",
             i + 1,
             recommender.get_title(*vn_id),
+            vn_id,
             vn_id
         );
     }
@@ -76,9 +78,10 @@ fn main() {
 
     for (i, vn_id) in combined_recommendations.iter().enumerate() {
         println!(
-            "{}. {} (ID: {})",
+            "{}. {} (ID: {}) - https://vndb.org/v{}",
             i + 1,
             recommender.get_title(*vn_id),
+            vn_id,
             vn_id
         );
     }

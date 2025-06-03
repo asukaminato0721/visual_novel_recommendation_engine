@@ -5,8 +5,10 @@ use sprs::{CsMat, TriMat};
 use std::{
     collections::HashMap,
     error::Error,
+    fs,
     fs::File,
     io::{BufRead, BufReader},
+    path::Path,
     sync::Arc,
 };
 
@@ -108,7 +110,34 @@ impl VisualNovelRecommender {
             println!("Loading votes");
         }
 
-        let file = File::open("data/votes")?;
+        // Find the latest votes file
+        let data_dir = Path::new("data");
+        let mut votes_files: Vec<_> = fs::read_dir(data_dir)?
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .to_str()
+                    .is_some_and(|name| name.starts_with("vndb-votes-"))
+            })
+            .collect();
+
+        // Sort files by date in filename (descending) to get the latest
+        votes_files.sort_by_key(|entry| {
+            entry.file_name().to_str().unwrap_or("").to_string() // Convert to String to allow for sorting
+        });
+        votes_files.reverse(); // sort_by_key sorts ascending by default
+
+        let votes_file_path = votes_files
+            .first()
+            .map(|entry| entry.path())
+            .ok_or("No votes file found matching pattern 'vndb-votes-*'")?;
+
+        if self.verbose {
+            println!("Using votes file: {:?}", votes_file_path);
+        }
+
+        let file = File::open(votes_file_path)?;
         let reader = BufReader::new(file);
         let mut ratings = Vec::new();
 
