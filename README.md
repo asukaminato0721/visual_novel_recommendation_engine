@@ -19,7 +19,7 @@ A Rust implementation ("riir") of the [Visual Novel Recommendation Engine](https
 
 This program requires specific data files to function properly. These should be placed in a data directory in the project root:
 
-1. Obtain the data files from the [original repository](https://github.com/JuicyStandoffishMan/VisualNovelRecommendationEngine)
+1. Obtain the data files from the <https://vndb.org/d14#4> and <https://vndb.org/d14#5>
 2. Create a data directory in your project root
 3. Place the data files in the data directory
 
