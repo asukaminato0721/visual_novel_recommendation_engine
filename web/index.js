@@ -126,27 +126,11 @@ class RecommendationApp {
     updateDataStatus(elementId, status, text) {
         const element = document.getElementById(elementId);
         if (!element) return;
-        
-        let iconClass, textClass;
-        switch (status) {
-            case 'loading':
-                iconClass = 'fas fa-spinner fa-spin text-gray-400';
-                textClass = 'text-gray-500';
-                break;
-            case 'success':
-                iconClass = 'fas fa-check-circle text-green-500';
-                textClass = 'text-green-600';
-                break;
-            case 'error':
-                iconClass = 'fas fa-times-circle text-red-500';
-                textClass = 'text-red-600';
-                break;
-        }
-        
-        element.innerHTML = `
-            <i class="${iconClass} mr-2"></i>
-            <span class="${textClass}">${text}</span>
-        `;
+        let prefix = '';
+        if (status === 'loading') prefix = '[...] ';
+        else if (status === 'success') prefix = '[OK] ';
+        else if (status === 'error') prefix = '[ERR] ';
+        element.textContent = prefix + text;
     }
 
     updateProgress(percent, text) {
@@ -165,7 +149,7 @@ class RecommendationApp {
     showUploadProgress(show) {
         const uploadProgress = document.getElementById('uploadProgress');
         if (uploadProgress) {
-            uploadProgress.classList.toggle('hidden', !show);
+            uploadProgress.style.display = show ? 'block' : 'none';
         }
     }
 
@@ -184,8 +168,6 @@ class RecommendationApp {
     updateGetRecommendationsButton() {
         const vnId = document.getElementById('vnId').value;
         const button = document.getElementById('getRecommendations');
-        
-        // Enable button if we have a VN ID and all data is loaded
         const allDataLoaded = this.dataLoaded.titles && this.dataLoaded.tags && this.dataLoaded.votes;
         const canGetRecommendations = vnId && this.recommender && allDataLoaded;
         button.disabled = !canGetRecommendations;
@@ -257,111 +239,78 @@ class RecommendationApp {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
 
+        // Caption (for combined list with source)
+        let captionHtml = '';
         if (sourceTitle && sourceId) {
-            // Add source VN info for combined recommendations
-            const sourceDiv = document.createElement('div');
-            sourceDiv.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4';
-            sourceDiv.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                    <span class="font-medium text-blue-800">Recommendations based on:</span>
-                    <a href="https://vndb.org/v${sourceId}" target="_blank" 
-                       class="ml-2 text-blue-600 hover:text-blue-800 font-semibold hover:underline">
-                        ${sourceTitle} (ID: ${sourceId})
-                    </a>
-                </div>
-            `;
-            container.appendChild(sourceDiv);
+            captionHtml = `<caption style="caption-side:top; text-align:left; font-weight:bold;">Based on: <a href='https://vndb.org/v${sourceId}' target='_blank'>${sourceTitle} (ID: ${sourceId})</a></caption>`;
         }
 
-        if (items.length === 0) {
-            container.innerHTML += `
-                <div class="text-gray-500 text-center py-4">
-                    <i class="fas fa-search mr-2"></i>
-                    No recommendations found
-                </div>
-            `;
+        if (!items || items.length === 0) {
+            container.innerHTML = captionHtml + '<div>No recommendations found.</div>';
             return;
         }
 
-        items.forEach((item, index) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'recommendation-item bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-300';
-            
-            itemDiv.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mr-3">
-                            ${index + 1}
-                        </span>
-                        <span class="text-lg font-medium text-gray-900">${item.title}</span>
-                        <span class="text-sm text-gray-500 ml-2">(ID: ${item.id})</span>
-                    </div>
-                    <a href="${item.url}" target="_blank" 
-                       class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition duration-300">
-                        <i class="fas fa-external-link-alt mr-2"></i>
-                        View on VNDB
-                    </a>
-                </div>
+        // Build table
+        const table = document.createElement('table');
+        table.border = '1';
+        table.cellPadding = '4';
+        table.cellSpacing = '0';
+        table.style.borderCollapse = 'collapse';
+        if (captionHtml) table.innerHTML = captionHtml;
+
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th>#</th><th>ID</th><th>Title</th><th>Link</th></tr>';
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        items.forEach((item, idx) => {
+            const tr = document.createElement('tr');
+            const safeTitle = (item.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${item.id}</td>
+                <td>${safeTitle}</td>
+                <td>${item.url ? `<a href='${item.url}' target='_blank'>VNDB</a>` : ''}</td>
             `;
-            
-            container.appendChild(itemDiv);
+            tbody.appendChild(tr);
         });
+        table.appendChild(tbody);
+        container.appendChild(table);
     }
 
     showLoading(show) {
         const loading = document.getElementById('loading');
-        loading.classList.toggle('hidden', !show);
+        loading.style.display = show ? 'block' : 'none';
     }
 
     showResults() {
-        document.getElementById('results').classList.remove('hidden');
+        document.getElementById('results').style.display = 'block';
     }
 
     hideResults() {
-        document.getElementById('results').classList.add('hidden');
+        document.getElementById('results').style.display = 'none';
     }
 
     showError(message) {
         const errorDiv = document.getElementById('error');
         const errorMessage = document.getElementById('errorMessage');
         errorMessage.textContent = message;
-        errorDiv.classList.remove('hidden');
-        
-        // Auto-hide error after 5 seconds
-        setTimeout(() => {
-            this.hideError();
-        }, 5000);
+        errorDiv.style.display = 'block';
+        setTimeout(() => { this.hideError(); }, 5000);
     }
 
     hideError() {
-        document.getElementById('error').classList.add('hidden');
+        document.getElementById('error').style.display = 'none';
     }
 
     showSuccess(message) {
         // Create a temporary success message
         const successDiv = document.createElement('div');
-        successDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4';
-        successDiv.innerHTML = `
-            <div class="flex">
-                <div class="py-1">
-                    <i class="fas fa-check-circle mr-2"></i>
-                </div>
-                <div>
-                    <p class="font-bold">Success</p>
-                    <p class="text-sm">${message}</p>
-                </div>
-            </div>
-        `;
-        
-        // Insert after the upload section
-        const uploadSection = document.querySelector('.container .bg-white');
-        uploadSection.insertAdjacentElement('afterend', successDiv);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            successDiv.remove();
-        }, 3000);
+        successDiv.style.cssText = 'border:1px solid #0a0; color:#0a0; padding:6px; margin:8px 0;';
+        successDiv.textContent = 'Success: ' + message;
+        const uploadSection = document.getElementById('uploadSection');
+        uploadSection.parentNode.insertBefore(successDiv, uploadSection.nextSibling);
+        setTimeout(() => { successDiv.remove(); }, 3000);
     }
 }
 
