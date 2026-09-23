@@ -9,11 +9,11 @@
 
 <div id="uploadSection">
     <h2>Upload Data Files</h2>
-    <p>Upload the three required data files (vn_titles, tags_vn, vndb-votes-YYYY-MM-DD).
-from <a href="https://vndb.org/d14#5" target="_blank">https://vndb.org/d14#5</a>
-
-<a href="https://vndb.org/d14#4" target="_blank">https://vndb.org/d14#4</a>
-    </p>
+    <p>Download the data dumps directly from VNDB, extract the required files, then upload them here:</p>
+    <ul>
+        <li><a href="https://dl.vndb.org/dump/vndb-db-latest.tar.zst">Download database dump (.tar.zst)</a> — extract <code>db/vn_titles</code> and <code>db/tags_vn</code>.</li>
+        <li><a href="https://dl.vndb.org/dump/vndb-votes-latest.gz">Download votes dump (.gz)</a> — decompress it to get the votes file.</li>
+    </ul>
     <div>
         <label>VN Titles File: <input type="file" id="vnTitlesFile" /></label>
         <span id="vnTitlesStatus">Waiting</span>

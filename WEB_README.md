@@ -7,8 +7,8 @@ A visual novel recommendation engine web application based on Rust and WebAssemb
 - 🎮 Tag-based recommendation algorithm
 - 👥 User rating-based collaborative filtering
 - 📊 Hybrid recommendation system
-- 📁 Automatic data loading support
-- 🌐 Modern web interface
+- 📁 Manual data upload with direct file links
+- 🌐 Minimal web interface
 - ⚡ High-performance computing with WebAssembly
 
 ## Quick Start
@@ -34,7 +34,7 @@ A visual novel recommendation engine web application based on Rust and WebAssemb
 
 3. **Start development server**
    ```bash
-   ./serve.sh
+   python3 -m http.server 8000 --directory web
    ```
 
 4. **Open in browser**
@@ -53,12 +53,12 @@ A visual novel recommendation engine web application based on Rust and WebAssemb
 
 ### Data Loading
 
-The application automatically loads the following data files from the same directory:
+Download the database and votes dumps linked on the page directly from VNDB. Extract `db/vn_titles` and `db/tags_vn` from the database archive, and decompress the votes dump. Upload the resulting files with the matching file inputs:
 - `vn_titles`: Visual novel title data
 - `tags_vn`: Tag relationship data  
 - `vndb-votes-*`: User rating data
 
-The loading progress is displayed in real-time on the interface.
+The page shows the loading status for each file.
 
 ## Technical Architecture
 
@@ -69,8 +69,6 @@ The loading progress is displayed in real-time on the interface.
 - **serde**: Serialization/deserialization
 
 ### Frontend (HTML + JavaScript + CSS)
-- **Tailwind CSS**: Modern UI framework
-- **Font Awesome**: Icon library
 - **Vanilla JavaScript**: No framework dependencies
 
 ### Recommendation Algorithms
@@ -92,7 +90,7 @@ The loading progress is displayed in real-time on the interface.
 │   ├── index.html       # Main page
 │   ├── index.js         # JavaScript logic
 │   └── pkg/             # Generated WASM package
-├── data/                # Data files
+├── wrangler.jsonc       # Static asset deployment settings
 └── build_web.sh         # Build script
 ```
 
@@ -105,7 +103,7 @@ The loading progress is displayed in real-time on the interface.
 
 2. **Start server only**:
    ```bash
-   ./serve.sh
+   python3 -m http.server 8000 --directory web
    ```
 
 3. **Run native command line version**:
@@ -121,7 +119,7 @@ The loading progress is displayed in real-time on the interface.
 
 ### CORS errors
 - Ensure access through HTTP server, not by directly opening HTML files
-- Use the provided `./serve.sh` script
+- Serve the `web/` directory over HTTP
 
 ### Empty recommendation results
 - Confirm the input VN ID exists in the database

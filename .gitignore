@@ -7,7 +7,9 @@ Cargo.lock
 
 # WASM build artifacts
 web/pkg/
-docs/pkg/
+
+# Retired site directory; keep large data snapshots out of deployments
+/docs/
 
 # IDE
 .vscode/
@@ -32,3 +34,10 @@ node_modules/
 # Python cache
 __pycache__/
 *.pyc
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example

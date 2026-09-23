@@ -33,7 +33,7 @@ If you want to deploy manually:
    ```bash
    git checkout --orphan gh-pages
    git rm -rf .
-   cp -r docs/* .
+   cp -r web/* .
    git add .
    git commit -m "Deploy to GitHub Pages"
    git push origin gh-pages
@@ -47,7 +47,7 @@ If you want to deploy manually:
 
 If you have your own domain:
 
-1. Create a `CNAME` file in the `docs/` directory
+1. Create a `CNAME` file in the `web/` directory
 2. File content should be your domain, e.g.: `vnrec.example.com`
 3. Add a CNAME record in your DNS settings pointing to `your-username.github.io`
 
@@ -79,5 +79,5 @@ Or manually:
 
 ```bash
 ./build_web.sh
-# Then push changes in docs/ directory to gh-pages branch
+# Then push changes in web/ directory to gh-pages branch
 ```

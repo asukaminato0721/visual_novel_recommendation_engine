@@ -27,3 +27,6 @@ features = [
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

@@ -37,7 +37,7 @@ jobs:
       if: github.ref == 'refs/heads/master'
       uses: actions/upload-pages-artifact@v2
       with:
-        path: ./docs
+        path: ./web
         
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/master'
